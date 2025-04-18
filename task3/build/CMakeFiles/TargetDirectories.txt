@@ -1,0 +1,3 @@
+/home/i.grishanov/parallel_course_tasks/task3/build/CMakeFiles/task2.dir
+/home/i.grishanov/parallel_course_tasks/task3/build/CMakeFiles/edit_cache.dir
+/home/i.grishanov/parallel_course_tasks/task3/build/CMakeFiles/rebuild_cache.dir

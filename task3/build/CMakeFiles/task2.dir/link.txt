@@ -1,0 +1,1 @@
+/opt/nvidia/hpc_sdk/Linux_x86_64/23.11/compilers/bin/nvc++  -O2 CMakeFiles/task2.dir/part2/src/main.cpp.o CMakeFiles/task2.dir/part2/src/Client.cpp.o CMakeFiles/task2.dir/part2/src/Server.cpp.o -o task2 
