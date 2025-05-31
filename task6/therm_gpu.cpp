@@ -43,6 +43,7 @@ int main(int argc, char* argv[]) {
         grid[grid_size * k] = tl + (bl - tl) * k / (grid_size - 1.0);
         grid[grid_size * k + grid_size - 1] = tr + (br - tr) * k / (grid_size - 1.0);
     }
+    // перенос данных на gpu 
     #pragma acc enter data copyin(grid[:grid_size*grid_size], grid_new[:grid_size*grid_size])
     nvtxRangePop();
     double max_error = target_accuracy + 1.0;
@@ -50,9 +51,11 @@ int main(int argc, char* argv[]) {
     auto start_time = std::chrono::steady_clock::now();
     nvtxRangePushA("computation");
     while (max_error > target_accuracy && current_iter < max_iter) {
+        //вычисляем ошибку не на каждой итерации 
         bool compute_error = (current_iter % 1000 == 0);
         double new_error = 0.0;
         if (compute_error) {
+            // Ядро 1: Обновление сетки + вычисление ошибки
             #pragma acc parallel loop reduction(max:new_error) present(grid, grid_new)
             for (int row = 1; row < grid_size - 1; row++) {
                 for (int col = 1; col < grid_size - 1; col++) {
@@ -68,6 +71,7 @@ int main(int argc, char* argv[]) {
             }
             max_error = new_error;
         } else {
+            // Ядро 2: Только обновление сетки (без вычисления ошибки)
             #pragma acc parallel loop present(grid, grid_new)
             for (int row = 1; row < grid_size - 1; row++) {
                 for (int col = 1; col < grid_size - 1; col++) {
@@ -81,7 +85,8 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
-        #pragma acc parallel loop present(grid, grid_new)
+        // Ядро 3: Копирование данных обратно
+        #pragma acc parallel loop present(grid, grid_new) // объединение циклов
         for (int row = 1; row < grid_size - 1; row++) {
             for (int col = 1; col < grid_size - 1; col++) {
                 grid[row * grid_size + col] = grid_new[row * grid_size + col];
@@ -95,6 +100,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Execution time: " << duration.count() << " seconds\n";
     std::cout << "Total iterations: " << current_iter << "\n";
     std::cout << "Final error: " << max_error << "\n";
+    // Освобождение GPU-памяти
     #pragma acc exit data delete(grid[:grid_size*grid_size], grid_new[:grid_size*grid_size])
     free(grid);
     free(grid_new);
